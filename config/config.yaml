@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Loan Decision AI Audit & Reliability Framework — central configuration.
+# Anything path-, schema-, or hyperparameter-related lives here so that no
+# magic strings leak into notebooks or modules. Compliance reviewers want to
+# see a single source of truth for the model's environment.
+# ─────────────────────────────────────────────────────────────────────────────
+
+project:
+  name: loan-audit-framework
+  random_seed: 42
+  target_col: TARGET
+  id_col: SK_ID_CURR
+
+paths:
+  data_raw: data/raw/home-credit-default-risk
+  data_interim: data/interim
+  data_processed: data/processed
+  artifacts: artifacts
+  # MLflow: SQLite backend for metadata (params, metrics, run IDs) — the
+  # file-based store is deprecated as of MLflow 3.x. Artifacts (models,
+  # plots) still live under the artifacts/mlruns/ folder.
+  mlflow_tracking_uri: artifacts/mlflow.db
+  mlflow_artifact_root: artifacts/mlruns
+
+# Home Credit Default Risk ships as a small star schema. Step 1 anchors on
+# application_train (the application + applicant snapshot); subsequent steps
+# can layer in bureau / previous_application aggregates. Listing them here
+# makes the dependency explicit for downstream pipeline stages.
+datasets:
+  application_train: application_train.csv
+  application_test: application_test.csv
+  bureau: bureau.csv
+  bureau_balance: bureau_balance.csv
+  previous_application: previous_application.csv
+  pos_cash_balance: POS_CASH_balance.csv
+  installments_payments: installments_payments.csv
+  credit_card_balance: credit_card_balance.csv
+
+# Columns Home Credit uses as sentinels — surfacing them in config means
+# imputation logic is auditable rather than buried in a notebook cell.
+sentinels:
+  days_employed_anomaly: 365243   # ~1000 years; legacy "missing" marker
+  xna_categories: ["XNA", "Unknown"]
+
+eda:
+  high_missing_threshold: 0.40    # flag columns above this for review
+  high_cardinality_threshold: 20  # categorical cols with > N levels = high card
+
+preprocessing:
+  numeric_imputer: median
+  categorical_imputer: most_frequent
+  categorical_encoder: onehot     # production-grade choice for tree models is fine; XGBoost handles sparse OHE well
+  scale_numeric: false            # XGBoost is scale-invariant; keep raw values for SHAP interpretability
