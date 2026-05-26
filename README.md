@@ -10,6 +10,8 @@ applications, but compliance won't sign off on removing manual review
 because the model has no reason codes, no drift detection, and no
 feedback loop. This repository builds the layer that fixes that.
 
+![Dashboard — Decision Explorer showing per-applicant SHAP reason codes](docs/dashboard.png)
+
 ## Project layout
 
 ```
